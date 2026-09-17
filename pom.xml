@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements. See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership. The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied. See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,11 +24,12 @@
 
     <groupId>org.casbin</groupId>
     <artifactId>jdbc-adapter</artifactId>
-    <version>2.6.0</version>
+    <!-- The real version is supplied at release time with -Drevision=X.Y.Z (see RELEASING.md). -->
+    <version>${revision}</version>
 
-    <name>JDBC Adapter for JCasbin</name>
+    <name>Apache jCasbin JDBC Adapter</name>
     <description>Load policy from JDBC supported database or save policy to it</description>
-    <url>https://github.com/apache/casbin-jcasbin-jdbc-adapter</url>
+    <url>https://casbin.apache.org/</url>
     <inceptionYear>2018</inceptionYear>
 
     <issueManagement>
@@ -32,8 +51,8 @@
     </licenses>
     <scm>
         <url>https://github.com/apache/casbin-jcasbin-jdbc-adapter</url>
-        <connection>git@github.com:apache/casbin-jcasbin-jdbc-adapter.git</connection>
-        <developerConnection>https://github.com/hsluoyz</developerConnection>
+        <connection>scm:git:https://github.com/apache/casbin-jcasbin-jdbc-adapter.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/apache/casbin-jcasbin-jdbc-adapter.git</developerConnection>
     </scm>
     <developers>
         <developer>
@@ -44,22 +63,78 @@
     </developers>
 
     <properties>
+        <revision>0.0.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://central.sonatype.com</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                    <include>DISCLAIMER</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <!-- Resolve ${revision} in the POM that gets installed/deployed. -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.7.0</version>
+                <configuration>
+                    <flattenMode>ossrh</flattenMode>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals><goal>flatten</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals><goal>clean</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- The generated Javadoc JAR carries the project legal files too. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>javadoc-legal-files</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>copy-resources</goal></goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/reports/apidocs/META-INF</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>LICENSE</include>
+                                        <include>NOTICE</include>
+                                        <include>DISCLAIMER</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
+                <version>3.2.7</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
@@ -99,12 +174,12 @@
                 <!-- Allow attaching Javadoc during releases -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.11.1</version>
                 <configuration>
-                    <source>11</source>
+                    <source>8</source>
                     <detectJavaApiLink>false</detectJavaApiLink>
                     <!-- Turn off Java 8 strict Javadoc checking -->
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <doclint>none</doclint>
                     <tags>
                         <tag>
                             <name>notnull</name>
@@ -132,6 +207,7 @@
                 <!-- Include zipped source code in releases -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -145,7 +221,7 @@
                 <!-- Automatically close and deploy from OSSRH -->
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.5.0</version>
+                <version>0.6.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>ossrh</publishingServerId>
@@ -157,10 +233,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -193,7 +275,7 @@
         <dependency>
             <groupId>org.casbin</groupId>
             <artifactId>jcasbin</artifactId>
-            <version>1.85.1</version>
+            <version>1.99.0</version>
         </dependency>
         <dependency>
             <groupId>com.mysql</groupId>
@@ -201,17 +283,14 @@
             <version>8.3.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.oracle/ojdbc -->
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc6</artifactId>
-            <version>11.2.0.4</version>
-        </dependency>
+        <!-- The Oracle driver is not redistributable, so applications using
+             Oracle add their own driver to the runtime classpath instead.
+             See the "Oracle driver" section of README.md. -->
         <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.2</version>
+            <version>42.7.13</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
         <dependency>
